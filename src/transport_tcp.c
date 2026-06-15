@@ -75,8 +75,7 @@ static int tcp_get_fd(transport_t *t){
   return tcp->fd; 
 }
 
-transport_t *tcp_transport_create(void)
-{
+static transport_t *tcp_alloc(void) {
   tcp_transport_t *tcp = malloc(sizeof(tcp_transport_t));
   if (!tcp) return NULL;
 
@@ -85,7 +84,30 @@ transport_t *tcp_transport_create(void)
   tcp->base.read    = tcp_read;
   tcp->base.write   = tcp_write;
   tcp->base.close   = tcp_close;
-  tcp->base.get_fd  = tcp_get_fd; 
+  tcp->base.get_fd  = tcp_get_fd;
 
-  return (transport_t *)tcp;  // safe - base is first member
+  return (transport_t *)tcp;
+}
+
+transport_t *tcp_transport_create(void)
+{
+  return tcp_alloc();
+}
+
+transport_t *tcp_transport_create_opts(transport_opts_t *opts)
+{
+  transport_t *t = tcp_alloc();
+  if (!t || !opts) return t;
+
+  tcp_transport_t *tcp = (tcp_transport_t *)t;
+
+  if (opts->recv_buf_size > 0)
+    setsockopt(tcp->fd, SOL_SOCKET, SO_RCVBUF,
+               &opts->recv_buf_size, sizeof(opts->recv_buf_size));
+
+  if (opts->send_buf_size > 0)
+    setsockopt(tcp->fd, SOL_SOCKET, SO_SNDBUF,
+               &opts->send_buf_size, sizeof(opts->send_buf_size));
+
+  return t;
 }
