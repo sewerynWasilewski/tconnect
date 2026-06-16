@@ -19,8 +19,9 @@ typedef struct {
 
 typedef struct {
   const char *http_version;  /* "1.0" or "1.1" */
-  bool follow_redirects;
-  int max_redirects;  
+  bool        follow_redirects;
+  int         max_redirects;
+  tls_opts_t *tls;           /* NULL = library defaults (verify_peer=true, system CA) */
 } http_opts_t;
 
 typedef struct {

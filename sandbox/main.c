@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tconnect/transport.h"
+#include "tconnect/http.h"
 
 /*
  * scenario: raw TLS connection to example.com:443
@@ -11,32 +12,14 @@
  */
 
 int main(void) {
-  transport_t *t = tls_transport_create(NULL);
-  if (!t) { fprintf(stderr, "alloc failed\n"); return 1; }
-
-  printf("connecting to httpbin.org:443 via TLS...\n");
-  if (t->connect(t, "httpbin.org", "443") != TCONNECT_OK) {
-    fprintf(stderr, "TLS connect failed: %s\n", tconnect_last_error());
+  tconnect_err_t err;
+  http_response_t *resp = http_get("https://httpbin.org/get", NULL, NULL, &err);
+  if (!resp) {
+    fprintf(stderr, "request failed: %s\n", tconnect_last_error());
     return 1;
   }
-  printf("TLS handshake complete\n\n");
-
-  const char *request =
-    "GET / HTTP/1.1\r\n"
-    "Host: httpbin.org\r\n"
-    "Connection: close\r\n"
-    "\r\n";
-
-  transport_write(t, request, strlen(request));
-
-  char buf[8192] = {0};
-  size_t total = 0;
-  int n;
-  while ((n = transport_read(t, buf + total, sizeof(buf) - total - 1)) > 0)
-    total += n;
-
-  printf("received %zu bytes:\n\n%s\n", total, buf);
-
-  t->close(t);
+  printf("status: %d %s\n", resp->status_code, resp->status_text);
+  printf("body:\n%s\n", resp->body);
+  http_response_free(resp);
   return 0;
 }

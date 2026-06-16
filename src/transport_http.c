@@ -200,7 +200,13 @@ static http_response_t *do_request(const char *method, const char *url_str,
       return NULL;
     }
 
-    transport_t *t = tcp_transport_create();
+    transport_t *t; 
+    if(strcmp(url->protocol, "https") == 0) { 
+      t = tls_transport_create(opts ? opts->tls : NULL); 
+    } else { 
+      t = tcp_transport_create();
+    }
+
     if (!t) {
       tconnect_set_error("transport allocation failed");
       url_free(url);
