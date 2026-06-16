@@ -53,7 +53,7 @@ static int  tcp_connect(transport_t *t, const char *host, const char* port) {
 static int  tcp_read(transport_t *t, void *buf, size_t len) {
   if(t == NULL) return -1;
   tcp_transport_t *tcp = (tcp_transport_t *)t;
-  return recv(tcp->fd, buf, len - 1, 0);
+  return recv(tcp->fd, buf, len, 0);
 }
 
 static int  tcp_write(transport_t *t, const void *buf, size_t len) { 

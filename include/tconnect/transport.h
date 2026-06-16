@@ -2,6 +2,9 @@
 #define TCONNECT_TRANSPORT_H
 
 #include <stddef.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 typedef struct transport_t transport_t;
 
@@ -49,5 +52,18 @@ typedef struct {
 } transport_opts_t;
 
 transport_t *tcp_transport_create_opts(transport_opts_t *opts);
+
+typedef struct {
+  int         min_version;   /* 0 = library default (TLS 1.2) */
+  int         max_version;   /* 0 = no limit */
+  bool        verify_peer;   /* true = verify server cert (default) */
+  const char *ca_file;       /* custom CA cert file, NULL = system store */
+  const char *client_cert;   /* mutual TLS client certificate file */
+  const char *client_key;    /* mutual TLS private key file */
+  const char *sni_hostname;  /* override SNI, NULL = use host from connect() */
+} tls_opts_t;
+
+transport_t *tls_transport_create(tls_opts_t *opts);
+transport_t *tls_transport_create_over(transport_t *inner, tls_opts_t *opts);
 
 #endif
