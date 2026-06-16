@@ -124,6 +124,15 @@ const char *http_header_get(http_response_t *resp, const char *name) {
   return NULL;
 }
 
+void http_response_print(const http_response_t *resp) {
+  if (!resp) { printf("(null response)\n"); return; }
+  printf("HTTP/1.1 %d %s\r\n", resp->status_code, resp->status_text ? resp->status_text : "");
+  if (resp->headers_raw) printf("%s\r\n", resp->headers_raw);
+  printf("\r\n");
+  if (resp->body && resp->body_len > 0)
+    printf("%.*s\n", (int)resp->body_len, resp->body);
+}
+
 void http_response_free(http_response_t *resp){
   if (!resp) return;
   free(resp->status_text);
@@ -174,6 +183,7 @@ static http_response_t *parse_response(const char *raw, size_t len) {
 
 #define SET_ERR(err_ptr, code) do { if (err_ptr) *(err_ptr) = (code); } while(0)
 
+// TODO: add http_request_t for logging/middleware
 static http_response_t *do_request(const char *method, const char *url_str,
                                    const char *body, const char **extra_headers,
                                    http_opts_t *opts, tconnect_err_t *err) {

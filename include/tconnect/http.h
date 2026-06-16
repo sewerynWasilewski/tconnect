@@ -43,4 +43,7 @@ void             http_response_free(http_response_t *resp);
  * null-terminates the value in-place on first call for each header. */
 const char *http_header_get(http_response_t *resp, const char *name);
 
+/* prints the response in HTTP wire format to stdout */
+void http_response_print(const http_response_t *resp);
+
 #endif
