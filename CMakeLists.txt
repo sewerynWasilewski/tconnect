@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_library(tconnect STATIC
     src/transport_tcp.c
+    src/transport_udp.c
     src/async.c
     src/transport_http.c
     src/transport_tls.c

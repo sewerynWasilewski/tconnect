@@ -78,15 +78,19 @@ static inline int transport_read_exact(transport_t *t, void *buf, size_t len) {
 }
 
 
-transport_t *tcp_transport_create(void);
-void         tcp_transport_free(transport_t *t);
-
 typedef struct {
   int recv_buf_size;  /* 0 = use OS default */
   int send_buf_size;
 } transport_opts_t;
 
+transport_t *tcp_transport_create(void);
+void         tcp_transport_free(transport_t *t);
 transport_t *tcp_transport_create_opts(transport_opts_t *opts);
+
+transport_t *udp_transport_create(void);
+void         udp_transport_free(transport_t *t);
+transport_t *udp_transport_create_opts(transport_opts_t *opts);
+
 
 typedef struct {
   int         min_version;   /* 0 = library default (TLS 1.2) */
