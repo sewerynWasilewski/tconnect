@@ -181,7 +181,8 @@ static http_response_t *do_request(const char *method, const char *url_str,
 
   const char *version = (opts && opts->http_version) ? opts->http_version : "1.1";
 
-  if (strcmp(version, "2") == 0 || strcmp(version, "2.0") == 0) {
+  if (strcmp(version, "1.0") != 0 && strcmp(version, "1.1") != 0) {
+    tconnect_set_error("unsupported HTTP version '%s' (supported: 1.0, 1.1)", version);
     SET_ERR(err, TCONNECT_ERR_UNSUPPORTED);
     return NULL;
   }
@@ -193,6 +194,7 @@ static http_response_t *do_request(const char *method, const char *url_str,
   while (number_of_redirects <= max_redirects) {
     url_t *url = url_parse(url_str);
     if (!url) {
+      tconnect_set_error("url_parse failed: allocation error or malformed URL");
       free(redirect_url);
       SET_ERR(err, TCONNECT_ERR_ALLOC);
       return NULL;
@@ -200,6 +202,7 @@ static http_response_t *do_request(const char *method, const char *url_str,
 
     transport_t *t = tcp_transport_create();
     if (!t) {
+      tconnect_set_error("transport allocation failed");
       url_free(url);
       free(redirect_url);
       SET_ERR(err, TCONNECT_ERR_ALLOC);
@@ -262,6 +265,7 @@ static http_response_t *do_request(const char *method, const char *url_str,
     free(buf);
 
     if (!resp) {
+      tconnect_set_error("failed to parse HTTP response");
       free(redirect_url);
       SET_ERR(err, TCONNECT_ERR_PARSE);
       return NULL;
