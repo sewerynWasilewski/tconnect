@@ -61,6 +61,22 @@ static inline int transport_read (transport_t *t, void *buf, size_t len)        
 static inline int transport_write(transport_t *t, const void *buf, size_t len)           { return t->write(t, buf, len); }
 static inline void transport_close(transport_t *t)                                       { t->close(t); }
 
+/* reads exactly len bytes, looping on short reads. returns 0 on success,
+ * negative on error, -1 if the connection closed before len bytes arrived. */
+static inline int transport_read_exact(transport_t *t, void *buf, size_t len) {
+  size_t total = 0;
+  while (total < len) {
+    int n = transport_read(t, (char *)buf + total, len - total);
+    if (n < 0) return n;
+    if (n == 0) {
+      tconnect_set_error("connection closed after %zu of %zu bytes", total, len);
+      return -1;
+    }
+    total += (size_t)n;
+  }
+  return 0;
+}
+
 
 transport_t *tcp_transport_create(void);
 void         tcp_transport_free(transport_t *t);
