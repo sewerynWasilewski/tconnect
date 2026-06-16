@@ -29,8 +29,7 @@ struct tconnect_ctx_t {
 
 #endif
 
-tconnect_ctx_t *async_ctx_create(void)
-{
+tconnect_ctx_t *async_ctx_create(void) {
   tconnect_ctx_t *ctx = calloc(1, sizeof(tconnect_ctx_t));
   if (!ctx) return NULL;
 
@@ -42,8 +41,7 @@ tconnect_ctx_t *async_ctx_create(void)
   return ctx;
 }
 
-void async_ctx_free(tconnect_ctx_t *ctx)
-{
+void async_ctx_free(tconnect_ctx_t *ctx) {
   if (!ctx) return;
 #ifdef __linux__
   close(ctx->epfd);
@@ -51,8 +49,7 @@ void async_ctx_free(tconnect_ctx_t *ctx)
   free(ctx);
 }
 
-int async_register(tconnect_ctx_t *ctx, transport_t *t, on_data_cb cb, void *userdata)
-{
+int async_register(tconnect_ctx_t *ctx, transport_t *t, on_data_cb cb, void *userdata) {
   if (ctx->nfds >= TCONNECT_MAX_CONNECTIONS) return -1;
 
   int fd = t->get_fd(t);
@@ -77,8 +74,7 @@ int async_register(tconnect_ctx_t *ctx, transport_t *t, on_data_cb cb, void *use
   return 0;
 }
 
-void async_unregister(tconnect_ctx_t *ctx, transport_t *t)
-{
+void async_unregister(tconnect_ctx_t *ctx, transport_t *t) {
   for (int i = 0; i < ctx->nfds; i++) {
     if (ctx->transports[i] != t) continue;
 
@@ -98,8 +94,7 @@ void async_unregister(tconnect_ctx_t *ctx, transport_t *t)
   }
 }
 
-int async_poll(tconnect_ctx_t *ctx, transport_t **ready, int max_ready, int timeout_ms)
-{
+int async_poll(tconnect_ctx_t *ctx, transport_t **ready, int max_ready, int timeout_ms) {
 #ifdef __linux__
 
   struct epoll_event events[TCONNECT_MAX_CONNECTIONS];

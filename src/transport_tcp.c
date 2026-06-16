@@ -22,8 +22,8 @@ static int  tcp_connect(transport_t *t, const char *host, const char* port) {
   struct addrinfo *result;
   int err = getaddrinfo(host, port, &hints, &result);
   if (err != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
-    return 1;
+    tconnect_set_error("getaddrinfo: %s", gai_strerror(err));
+    return TCONNECT_ERR_CONNECT;
   }
 
   int client_socket = -1;
@@ -44,10 +44,10 @@ static int  tcp_connect(transport_t *t, const char *host, const char* port) {
   freeaddrinfo(result);
 
   if (client_socket == -1) {
-    fprintf(stderr, "could not connect to %s:%s\n", host, port);
-    return 1;
+    tconnect_set_error("could not connect to %s:%s", host, port);
+    return TCONNECT_ERR_CONNECT;
   }
-  return 0;
+  return TCONNECT_OK;
 }
 
 static int  tcp_read(transport_t *t, void *buf, size_t len) {
@@ -89,13 +89,11 @@ static transport_t *tcp_alloc(void) {
   return (transport_t *)tcp;
 }
 
-transport_t *tcp_transport_create(void)
-{
+transport_t *tcp_transport_create(void) {
   return tcp_alloc();
 }
 
-transport_t *tcp_transport_create_opts(transport_opts_t *opts)
-{
+transport_t *tcp_transport_create_opts(transport_opts_t *opts) {
   transport_t *t = tcp_alloc();
   if (!t || !opts) return t;
 

@@ -9,22 +9,41 @@
 typedef struct transport_t transport_t;
 
 typedef enum {
-  TCONNECT_OK              = 0,
-  TCONNECT_ERR_ALLOC       = 1,
-  TCONNECT_ERR_CONNECT     = 2,
-  TCONNECT_ERR_UNSUPPORTED = 3,
-  TCONNECT_ERR_PARSE       = 4,
+  TCONNECT_OK              =   0,
+  TCONNECT_ERR_ALLOC       = -10,
+  TCONNECT_ERR_CONNECT     = -11,
+  TCONNECT_ERR_UNSUPPORTED = -12,
+  TCONNECT_ERR_PARSE       = -13,
+  TCONNECT_TLS_INIT_ERR    = -14,
 } tconnect_err_t;
 
-static inline const char *tconnect_strerror(tconnect_err_t err) {
-  switch(err){ 
-    case TCONNECT_OK:              return "OK"; 
-    case TCONNECT_ERR_ALLOC:       return "Allocation Error"; 
-    case TCONNECT_ERR_CONNECT:     return "Connection Error";
-    case TCONNECT_ERR_UNSUPPORTED: return "Unsuported Error";
-    case TCONNECT_ERR_PARSE:       return "Parse Error";
+/* last error string — thread-local, set internally on failure */
+static _Thread_local char _tconnect_last_error[256];
+
+static inline void tconnect_set_error(const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(_tconnect_last_error, sizeof(_tconnect_last_error), fmt, ap);
+  va_end(ap);
+}
+
+static inline const char *tconnect_last_error(void)
+{
+  return _tconnect_last_error[0] ? _tconnect_last_error : "no error";
+}
+
+static inline const char *tconnect_strerror(int err) {
+  if (err > -10 && err < 0) return "system error — check errno";
+  switch ((tconnect_err_t)err) {
+    case TCONNECT_OK:              return "ok";
+    case TCONNECT_ERR_ALLOC:       return "allocation failed";
+    case TCONNECT_ERR_CONNECT:     return "connection failed";
+    case TCONNECT_ERR_UNSUPPORTED: return "unsupported";
+    case TCONNECT_ERR_PARSE:       return "parse error";
+    case TCONNECT_TLS_INIT_ERR:    return "TLS init failed";
   }
-  return "Unknown Error Code"; 
+  return "unknown error";
 }
 
 struct transport_t {
