@@ -2,6 +2,7 @@
 #define TCONNECT_TRANSPORT_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -17,7 +18,7 @@ typedef enum {
   TCONNECT_TLS_INIT_ERR    = -14,
 } tconnect_err_t;
 
-/* last error string — thread-local, set internally on failure */
+/* last error string - thread-local, set internally on failure */
 static _Thread_local char _tconnect_last_error[256];
 
 static inline void tconnect_set_error(const char *fmt, ...)
@@ -34,7 +35,7 @@ static inline const char *tconnect_last_error(void)
 }
 
 static inline const char *tconnect_strerror(int err) {
-  if (err > -10 && err < 0) return "system error — check errno";
+  if (err > -10 && err < 0) return "system error - check errno";
   switch ((tconnect_err_t)err) {
     case TCONNECT_OK:              return "ok";
     case TCONNECT_ERR_ALLOC:       return "allocation failed";
@@ -104,5 +105,28 @@ typedef struct {
 
 transport_t *tls_transport_create(tls_opts_t *opts);
 transport_t *tls_transport_create_over(transport_t *inner, tls_opts_t *opts);
+
+#define WS_DEFAULT_MAX_MESSAGE_SIZE (16 * 1024 * 1024)  /* 16 MB */
+
+typedef struct {
+  size_t max_message_size;  /* 0 = use default (16MB) */
+} ws_opts_t;
+
+/* frame metadata — payload points into the caller-provided buffer, do not free */
+typedef struct {
+  uint8_t  opcode;
+  bool     fin;
+  uint8_t *payload;
+  size_t   payload_len;
+} ws_frame_t;
+
+/* ws_transport_create: path is the URL path e.g. "/chat", NULL = "/".
+ * ws_transport_create_over: caller provides inner transport (pass TLS for wss://) */
+transport_t *ws_transport_create(const char *path, ws_opts_t *opts);
+transport_t *ws_transport_create_over(transport_t *inner, const char *path, ws_opts_t *opts);
+
+/* reads one raw frame into buf. returns 0 on success, negative on error.
+ * control frames (ping/pong/close) are returned as-is — caller must handle them. */
+int ws_read_frame(transport_t *t, void *buf, size_t buf_len, ws_frame_t *frame);
 
 #endif

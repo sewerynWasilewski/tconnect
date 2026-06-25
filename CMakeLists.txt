@@ -10,9 +10,10 @@ add_library(tconnect STATIC
     src/async.c
     src/transport_http.c
     src/transport_tls.c
+    src/transport_ws.c
 )
 
-# TLS backend — OpenSSL.
+# TLS backend - OpenSSL.
 # to swap: replace find_package + target_link_libraries with another TLS library.
 find_package(OpenSSL REQUIRED)
 target_link_libraries(tconnect PRIVATE OpenSSL::SSL OpenSSL::Crypto)
