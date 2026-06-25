@@ -10,7 +10,7 @@ static int skip_dns_name(const unsigned char *buf, int pos, int n) {
   return pos + 1;
 }
 
-void main(void) {
+int main(void) {
   printf("=== UDP (DNS query for google.com via 8.8.8.8:53) ===\n");
 
   /* minimal DNS query: ask for A record of google.com */
@@ -29,12 +29,12 @@ void main(void) {
   };
 
   transport_t *t = udp_transport_create();
-  if (!t) { fprintf(stderr, "udp alloc failed\n"); return; }
+  if (!t) { fprintf(stderr, "udp alloc failed\n"); return 1; }
 
   if (transport_connect(t, "8.8.8.8", "53") != TCONNECT_OK) {
     fprintf(stderr, "udp connect failed: %s\n", tconnect_last_error());
     transport_close(t);
-    return;
+    return 1;
   }
 
   transport_write(t, query, sizeof(query));
