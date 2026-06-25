@@ -4,7 +4,7 @@
 #include "tconnect/transport.h"
 
 /*
- * raw TLS connection — no HTTP layer.
+ * raw TLS connection - no HTTP layer.
  * sends a hand-crafted HTTP/1.1 request over TLS and prints the response.
  */
 

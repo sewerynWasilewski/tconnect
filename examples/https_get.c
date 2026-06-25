@@ -4,7 +4,7 @@
 #include "tconnect/http.h"
 
 /*
- * HTTPS GET using the HTTP layer — TLS is handled automatically.
+ * HTTPS GET using the HTTP layer - TLS is handled automatically.
  */
 
 int main(void) {

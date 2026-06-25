@@ -18,7 +18,7 @@ typedef struct {
   tls_opts_t   opts;
 } tls_transport_t;
 
-/* custom BIO — OpenSSL reads/writes through inner transport_t, not fd directly */
+/* custom BIO - OpenSSL reads/writes through inner transport_t, not fd directly */
 static int bio_write(BIO *b, const char *buf, int len) {
   transport_t *inner = BIO_get_data(b);
   return transport_write(inner, buf, len);
