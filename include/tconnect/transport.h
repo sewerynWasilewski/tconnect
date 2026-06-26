@@ -18,8 +18,9 @@ typedef enum {
   TCONNECT_TLS_INIT_ERR    = -14,
 } tconnect_err_t;
 
-/* last error string - thread-local, set internally on failure */
-static _Thread_local char _tconnect_last_error[256];
+/* last error string - thread-local, set internally on failure.
+ * defined once in src/url.c — extern so all translation units share one instance */
+extern _Thread_local char _tconnect_last_error[256];
 
 static inline void tconnect_set_error(const char *fmt, ...)
 {
@@ -124,6 +125,9 @@ typedef struct {
  * ws_transport_create_over: caller provides inner transport (pass TLS for wss://) */
 transport_t *ws_transport_create(const char *path, ws_opts_t *opts);
 transport_t *ws_transport_create_over(transport_t *inner, const char *path, ws_opts_t *opts);
+/* parses ws:// or wss:// URL — selects TCP or TLS inner transport automatically.
+ * call transport_connect(t, NULL, NULL) to connect using the URL's host/port. */
+transport_t *ws_transport_from_url(const char *url, tls_opts_t *tls, ws_opts_t *opts);
 
 /* reads one raw frame into buf. returns 0 on success, negative on error.
  * control frames (ping/pong/close) are returned as-is — caller must handle them. */
