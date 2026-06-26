@@ -5,11 +5,13 @@
 #include <openssl/rand.h>
 
 #include "tconnect/transport.h"
-#include "tconnect/http.h"
+#include "tconnect/url.h"
 
 typedef struct {
   transport_t  base;
   transport_t *inner;
+  char        *host;
+  char        *port;
   char        *path;
   ws_opts_t    opts;
 } ws_transport_t;
@@ -46,7 +48,16 @@ static void b64_encode(const unsigned char *src, int src_len, char *dst) {
 static int ws_connect(transport_t *t, const char *host, const char *port) {
   ws_transport_t *ws = (ws_transport_t *)t;
 
-  if (transport_connect(ws->inner, host, port) != TCONNECT_OK) {
+  /* use stored host/port from ws_transport_from_url if caller passes NULL */
+  const char *h = (host && *host) ? host : ws->host;
+  const char *p = (port && *port) ? port : ws->port;
+
+  if (!h || !p) {
+    tconnect_set_error("ws_connect: no host/port — use transport_connect(t, host, port) or ws_transport_from_url");
+    return TCONNECT_ERR_CONNECT;
+  }
+
+  if (transport_connect(ws->inner, h, p) != TCONNECT_OK) {
     return TCONNECT_ERR_CONNECT;
   }
 
@@ -67,7 +78,7 @@ static int ws_connect(transport_t *t, const char *host, const char *port) {
     "Sec-WebSocket-Key: %s\r\n"
     "Sec-WebSocket-Version: 13\r\n"
     "\r\n",
-    path, host, port, ws_key);
+    path, h, p, ws_key);
 
   transport_write(ws->inner, req, req_len);
 
@@ -279,6 +290,8 @@ static void ws_close(transport_t *t) {
   }
 
   transport_close(ws->inner);
+  free(ws->host);
+  free(ws->port);
   free(ws->path);
 }
 
@@ -288,26 +301,58 @@ static int ws_get_fd(transport_t *t) {
   return ws->inner->get_fd(ws->inner);
 }
 
-static transport_t *ws_alloc(transport_t *inner, const char *path, ws_opts_t *opts) {
+static transport_t *ws_alloc(transport_t *inner, const char *host, const char *port,
+                             const char *path, ws_opts_t *opts) {
   ws_transport_t *ws = calloc(1, sizeof(ws_transport_t));
   if (!ws) return NULL;
 
-  ws->inner            = inner;
-  ws->path             = path ? strdup(path) : NULL;
+  ws->inner        = inner;
+  ws->host         = host ? strdup(host) : NULL;
+  ws->port         = port ? strdup(port) : NULL;
+  ws->path         = path ? strdup(path) : NULL;
   if (opts) ws->opts = *opts;
-  ws->base.connect     = ws_connect;
-  ws->base.read        = ws_read;
-  ws->base.write       = ws_write;
-  ws->base.close       = ws_close;
-  ws->base.get_fd      = ws_get_fd;
+  ws->base.connect = ws_connect;
+  ws->base.read    = ws_read;
+  ws->base.write   = ws_write;
+  ws->base.close   = ws_close;
+  ws->base.get_fd  = ws_get_fd;
 
   return (transport_t *)ws;
 }
 
 transport_t *ws_transport_create(const char *path, ws_opts_t *opts) {
-  return ws_alloc(tcp_transport_create(), path, opts);
+  return ws_alloc(tcp_transport_create(), NULL, NULL, path, opts);
 }
 
 transport_t *ws_transport_create_over(transport_t *inner, const char *path, ws_opts_t *opts) {
-  return ws_alloc(inner, path, opts);
+  return ws_alloc(inner, NULL, NULL, path, opts);
+}
+
+transport_t *ws_transport_from_url(const char *url_str, tls_opts_t *tls, ws_opts_t *ws_opts) {
+  url_t *url = url_parse(url_str);
+  if (!url) {
+    tconnect_set_error("ws_transport_from_url: failed to parse URL");
+    return NULL;
+  }
+
+  transport_t *inner;
+  if (strcmp(url->protocol, "wss") == 0) {
+    inner = tls_transport_create(tls);
+  } else if (strcmp(url->protocol, "ws") == 0) {
+    inner = tcp_transport_create();
+  } else {
+    tconnect_set_error("ws_transport_from_url: unsupported protocol '%s' (use ws:// or wss://)",
+                       url->protocol);
+    url_free(url);
+    return NULL;
+  }
+
+  if (!inner) {
+    url_free(url);
+    return NULL;
+  }
+
+  transport_t *t = ws_alloc(inner, url->host, url->port, url->path, ws_opts);
+  url_free(url);
+  return t;
 }
