@@ -4,18 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "transport.h"
-
-/* parsed URL - all fields are heap-allocated, free with url_free() */
-typedef struct {
-  char *_buf;      /* single allocation - all fields point into this */
-  char *protocol;
-  char *login;
-  char *password;
-  char *host;
-  char *port;
-  char *path;
-  char *query;
-} url_t;
+#include "url.h"
 
 typedef struct {
   const char *http_version;  /* "1.0" or "1.1" */
@@ -31,9 +20,6 @@ typedef struct {
   char  *body;          /* response body */
   size_t body_len;
 } http_response_t;
-
-url_t          *url_parse(const char *url);
-void            url_free(url_t *url);
 
 http_response_t *http_get (const char *url, const char **headers, http_opts_t *opts, tconnect_err_t *err);
 http_response_t *http_post(const char *url, const char *body, const char **headers, http_opts_t *opts, tconnect_err_t *err);
